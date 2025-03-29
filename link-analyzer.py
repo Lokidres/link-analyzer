@@ -10,7 +10,6 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 import socket
 
-# Gerekli kütüphaneleri yükle
 nltk.download('vader_lexicon')
 
 class AdvancedLinkAnalyzer:
@@ -24,7 +23,7 @@ class AdvancedLinkAnalyzer:
         self.files = []
 
     def fetch_content(self):
-        """Linkin içeriğini çeker."""
+    
         try:
             response = requests.get(self.url)
             response.raise_for_status()
@@ -37,13 +36,12 @@ class AdvancedLinkAnalyzer:
             print(f"Error: {e}")
 
     def extract_images(self):
-        """Görselleri çıkarır."""
         for img in self.soup.find_all('img'):
             img_url = urljoin(self.url, img['src'])
             self.images.append(img_url)
 
     def extract_links(self):
-        """Bağlantıları çıkarır."""
+      
         for link in self.soup.find_all('a'):
             href = link.get('href')
             if href:
@@ -51,7 +49,7 @@ class AdvancedLinkAnalyzer:
                 self.links.append(full_url)
 
     def extract_files(self):
-        """Dosyaları çıkarır."""
+      
         for link in self.soup.find_all('a'):
             href = link.get('href')
             if href and any(href.endswith(ext) for ext in ['.pdf', '.doc', '.docx', '.xls', '.xlsx']):
@@ -59,7 +57,7 @@ class AdvancedLinkAnalyzer:
                 self.files.append(full_url)
 
     def check_ssl(self):
-        """SSL sertifikasını kontrol eder."""
+     
         try:
             context = ssl.create_default_context()
             with socket.create_connection((self.parsed_url.hostname, 443)) as sock:
@@ -72,7 +70,7 @@ class AdvancedLinkAnalyzer:
             print(f"❌ SSL Certificate is invalid or not found: {e}")
 
     def check_domain_info(self):
-        """WHOIS bilgilerini kontrol eder."""
+      
         try:
             domain = whois.whois(self.parsed_url.hostname)
             print(f"🌐 Domain Information:")
@@ -83,7 +81,7 @@ class AdvancedLinkAnalyzer:
             print(f"❌ Failed to fetch WHOIS information: {e}")
 
     def check_redirects(self):
-        """Yönlendirmeleri kontrol eder."""
+       
         try:
             response = requests.get(self.url, allow_redirects=True)
             if response.history:
@@ -96,13 +94,13 @@ class AdvancedLinkAnalyzer:
             print(f"❌ Failed to check redirects: {e}")
 
     def analyze_text(self):
-        """Metin analizi yapar."""
+       
         sia = SentimentIntensityAnalyzer()
         sentiment = sia.polarity_scores(self.text_content)
         print(f"📊 Text Sentiment Analysis: {sentiment}")
 
     def analyze_images(self):
-        """Görsellerdeki metinleri okur."""
+      
         for img_url in self.images:
             try:
                 response = requests.get(img_url, stream=True)
@@ -113,28 +111,28 @@ class AdvancedLinkAnalyzer:
                 print(f"Image analysis error: {e}")
 
     def analyze_links(self):
-        """Bağlantıları kontrol eder."""
+    
         print(f"🔗 Total {len(self.links)} links found:")
         for link in self.links:
             print(f" - {link}")
 
     def analyze_files(self):
-        """Dosyaları listeler."""
+    
         print(f"📂 Total {len(self.files)} files found:")
         for file in self.files:
             print(f" - {file}")
 
     def run_analysis(self):
-        """Tüm analizleri çalıştırır."""
+     
         print(f"\n🚀 Analyzing Link: {self.url}")
         print(f"🔍 Domain Extension: {self.parsed_url.netloc}")
 
-        # SSL ve WHOIS Kontrolü
+    
         self.check_ssl()
         self.check_domain_info()
         self.check_redirects()
 
-        # İçerik Analizi
+    
         self.fetch_content()
         self.analyze_text()
         self.analyze_images()
