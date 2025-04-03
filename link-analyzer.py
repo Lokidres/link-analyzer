@@ -13,20 +13,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-# NLTK veri seti kontrolü
 try:
     nltk.data.find('sentiment/vader_lexicon.zip')
 except LookupError:
-    logging.error("NLTK veri seti eksik. Lütfen 'nltk.download(\"vader_lexicon\")' komutunu çalıştırın.")
+    logging.error("NLTK dataset is missing. Please run 'nltk.download(\"vader_lexicon\")'")
     exit()
 
-# Logging yapılandırması
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AdvancedLinkAnalyzer:
     """
-    Gelişmiş bağlantı analiz aracı.
-    URL üzerinden içerik, SSL, WHOIS bilgisi, yönlendirme, metin, resim ve dosya analizi yapar.
+    Advanced Link Analyzer.
+    Analyzes content, SSL, WHOIS info, redirects, text, images, and file links from a URL.
     """
     def __init__(self, url, timeout=10):
         self.url = url
@@ -42,7 +40,6 @@ class AdvancedLinkAnalyzer:
         }
 
     def fetch_content(self):
-        """URL'den içerik çek ve BeautifulSoup objesine aktar."""
         try:
             response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
             response.raise_for_status()
@@ -55,94 +52,85 @@ class AdvancedLinkAnalyzer:
             logging.error(f"Content fetch error: {e}")
 
     def extract_images(self):
-        """Sayfadaki resim URL'lerini çıkar."""
         if self.soup:
             for img in self.soup.find_all('img'):
                 src = img.get('src')
                 if src:
                     img_url = urljoin(self.url, src)
                     self.images.append(img_url)
-            logging.info(f"{len(self.images)} resim bulundu.")
+            logging.info(f"{len(self.images)} images found.")
 
     def extract_links(self):
-        """Sayfadaki bağlantıları çıkar."""
         if self.soup:
             for link in self.soup.find_all('a'):
                 href = link.get('href')
                 if href:
                     full_url = urljoin(self.url, href)
                     self.links.append(full_url)
-            logging.info(f"{len(self.links)} link bulundu.")
+            logging.info(f"{len(self.links)} links found.")
 
     def extract_files(self):
-        """Sayfadaki belirli dosya uzantılarını içeren bağlantıları çıkar (.pdf, .doc, .docx, .xls, .xlsx)."""
         if self.soup:
             for link in self.soup.find_all('a'):
                 href = link.get('href')
                 if href and any(href.lower().endswith(ext) for ext in ['.pdf', '.doc', '.docx', '.xls', '.xlsx']):
                     full_url = urljoin(self.url, href)
                     self.files.append(full_url)
-            logging.info(f"{len(self.files)} dosya bağlantısı bulundu.")
+            logging.info(f"{len(self.files)} file links found.")
 
     def check_ssl(self):
-        """SSL sertifikasını kontrol et ve detaylarını raporla."""
         try:
             context = ssl.create_default_context()
             with socket.create_connection((self.parsed_url.hostname, 443), timeout=self.timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=self.parsed_url.hostname) as ssock:
                     cert = ssock.getpeercert()
-                    logging.info("✅ SSL Sertifikası geçerli.")
-                    logging.info(f"   Issuer: {cert.get('issuer')}")
-                    logging.info(f"   Expires: {cert.get('notAfter')}")
+                    logging.info("SSL certificate valid.")
+                    logging.info(f"Issuer: {cert.get('issuer')}")
+                    logging.info(f"Expires: {cert.get('notAfter')}")
         except Exception as e:
-            logging.error(f"❌ SSL kontrol hatası: {e}")
+            logging.error(f"SSL error: {e}")
 
     def check_domain_info(self):
-        """WHOIS bilgilerini çek ve raporla."""
         try:
             domain = whois.whois(self.parsed_url.hostname)
-            logging.info("🌐 Domain Bilgileri:")
-            logging.info(f"   Registrar: {domain.registrar}")
-            logging.info(f"   Creation Date: {domain.creation_date}")
-            logging.info(f"   Expiration Date: {domain.expiration_date}")
+            logging.info("Domain info:")
+            logging.info(f"Registrar: {domain.registrar}")
+            logging.info(f"Creation Date: {domain.creation_date}")
+            logging.info(f"Expiration Date: {domain.expiration_date}")
         except Exception as e:
-            logging.error(f"❌ WHOIS bilgisi alınamadı: {e}")
+            logging.error(f"WHOIS error: {e}")
 
     def check_redirects(self):
-        """Yönlendirmeleri kontrol et."""
         try:
             response = requests.get(self.url, headers=self.headers, timeout=self.timeout, allow_redirects=True)
             if response.history:
-                logging.info("🔀 Yönlendirmeler tespit edildi:")
+                logging.info("Redirects detected:")
                 for resp in response.history:
-                    logging.info(f"   - {resp.url} → {resp.status_code}")
+                    logging.info(f"{resp.url} -> {resp.status_code}")
             else:
-                logging.info("✅ Yönlendirme bulunamadı.")
+                logging.info("No redirects.")
         except Exception as e:
-            logging.error(f"❌ Yönlendirme kontrol hatası: {e}")
+            logging.error(f"Redirect error: {e}")
 
     def analyze_text(self):
-        """Metin içerik üzerinden duygu analizini gerçekleştir."""
         try:
             sia = SentimentIntensityAnalyzer()
             sentiment = sia.polarity_scores(self.text_content)
-            logging.info(f"📊 Metin Duygu Analizi: {sentiment}")
+            logging.info(f"Text sentiment analysis: {sentiment}")
         except Exception as e:
-            logging.error(f"Metin analizi hatası: {e}")
+            logging.error(f"Text analysis error: {e}")
 
     def analyze_image(self, img_url):
-        """Belirtilen resim URL'si için OCR yaparak metin çıkarır."""
         try:
             response = requests.get(img_url, headers=self.headers, stream=True, timeout=self.timeout)
             img = Image.open(response.raw)
             text = pytesseract.image_to_string(img)
             return img_url, text.strip()
         except Exception as e:
-            logging.error(f"Resim analizi hatası ({img_url}): {e}")
+            logging.error(f"Image analysis error ({img_url}): {e}")
             return img_url, ""
 
     def analyze_images(self):
-        """Tüm resimler üzerinde paralel OCR analizi gerçekleştirir."""
         results = {}
         with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_url = {executor.submit(self.analyze_image, url): url for url in self.images}
@@ -150,32 +138,27 @@ class AdvancedLinkAnalyzer:
                 img_url, text = future.result()
                 results[img_url] = text
                 if text:
-                    logging.info(f"🖼️ {img_url} -> Metin: {text}")
+                    logging.info(f"{img_url} -> {text}")
                 else:
-                    logging.info(f"🖼️ {img_url} -> Metin çıkarılamadı.")
+                    logging.info(f"{img_url} -> No text extracted.")
         return results
 
     def analyze_links(self):
-        """Bağlantıları liste halinde raporlar."""
-        logging.info(f"🔗 Toplam {len(self.links)} bağlantı bulundu.")
+        logging.info(f"Total links found: {len(self.links)}")
         for link in self.links:
-            logging.debug(f" - {link}")
+            logging.debug(f"{link}")
 
     def analyze_files(self):
-        """Dosya bağlantılarını liste halinde raporlar."""
-        logging.info(f"📂 Toplam {len(self.files)} dosya bağlantısı bulundu.")
+        logging.info(f"Total file links found: {len(self.files)}")
         for file in self.files:
-            logging.debug(f" - {file}")
+            logging.debug(f"{file}")
 
     def run_analysis(self):
-        """Tüm analiz adımlarını sırayla çalıştırır."""
-        logging.info(f"\n🚀 Analiz Başlatılıyor: {self.url}")
-        logging.info(f"🔍 Domain: {self.parsed_url.netloc}")
-
+        logging.info(f"Starting analysis for: {self.url}")
+        logging.info(f"Domain: {self.parsed_url.netloc}")
         self.check_ssl()
         self.check_domain_info()
         self.check_redirects()
-
         self.fetch_content()
         self.analyze_text()
         self.analyze_images()
@@ -183,10 +166,9 @@ class AdvancedLinkAnalyzer:
         self.analyze_files()
 
 def main():
-    parser = argparse.ArgumentParser(description="Gelişmiş Bağlantı Analiz Aracı")
-    parser.add_argument("url", help="Analiz edilecek URL")
+    parser = argparse.ArgumentParser(description="Advanced Link Analyzer")
+    parser.add_argument("-u", "--url", required=True, help="URL to analyze")
     args = parser.parse_args()
-
     analyzer = AdvancedLinkAnalyzer(args.url)
     analyzer.run_analysis()
 
