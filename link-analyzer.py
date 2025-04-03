@@ -16,16 +16,12 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 try:
     nltk.data.find('sentiment/vader_lexicon.zip')
 except LookupError:
-    logging.error("NLTK dataset is missing. Please run 'nltk.download(\"vader_lexicon\")'")
+    logging.error("NLTK dataset missing. Run 'nltk.download(\"vader_lexicon\")'")
     exit()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AdvancedLinkAnalyzer:
-    """
-    Advanced Link Analyzer.
-    Analyzes content, SSL, WHOIS info, redirects, text, images, and file links from a URL.
-    """
     def __init__(self, url, timeout=10):
         self.url = url
         self.timeout = timeout
@@ -84,39 +80,39 @@ class AdvancedLinkAnalyzer:
             with socket.create_connection((self.parsed_url.hostname, 443), timeout=self.timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=self.parsed_url.hostname) as ssock:
                     cert = ssock.getpeercert()
-                    logging.info("SSL certificate valid.")
-                    logging.info(f"Issuer: {cert.get('issuer')}")
-                    logging.info(f"Expires: {cert.get('notAfter')}")
+                    logging.info("✅ Valid SSL certificate")
+                    logging.info(f"   Issuer: {cert.get('issuer')}")
+                    logging.info(f"   Expires: {cert.get('notAfter')}")
         except Exception as e:
-            logging.error(f"SSL error: {e}")
+            logging.error(f"❌ SSL check error: {e}")
 
     def check_domain_info(self):
         try:
             domain = whois.whois(self.parsed_url.hostname)
-            logging.info("Domain info:")
-            logging.info(f"Registrar: {domain.registrar}")
-            logging.info(f"Creation Date: {domain.creation_date}")
-            logging.info(f"Expiration Date: {domain.expiration_date}")
+            logging.info("🌐 Domain Information:")
+            logging.info(f"   Registrar: {domain.registrar}")
+            logging.info(f"   Creation Date: {domain.creation_date}")
+            logging.info(f"   Expiration Date: {domain.expiration_date}")
         except Exception as e:
-            logging.error(f"WHOIS error: {e}")
+            logging.error(f"❌ WHOIS lookup failed: {e}")
 
     def check_redirects(self):
         try:
             response = requests.get(self.url, headers=self.headers, timeout=self.timeout, allow_redirects=True)
             if response.history:
-                logging.info("Redirects detected:")
+                logging.info("🔀 Detected redirects:")
                 for resp in response.history:
-                    logging.info(f"{resp.url} -> {resp.status_code}")
+                    logging.info(f"   - {resp.url} → {resp.status_code}")
             else:
-                logging.info("No redirects.")
+                logging.info("✅ No redirects found")
         except Exception as e:
-            logging.error(f"Redirect error: {e}")
+            logging.error(f"❌ Redirect check error: {e}")
 
     def analyze_text(self):
         try:
             sia = SentimentIntensityAnalyzer()
             sentiment = sia.polarity_scores(self.text_content)
-            logging.info(f"Text sentiment analysis: {sentiment}")
+            logging.info(f"📊 Text Sentiment Analysis: {sentiment}")
         except Exception as e:
             logging.error(f"Text analysis error: {e}")
 
@@ -138,27 +134,29 @@ class AdvancedLinkAnalyzer:
                 img_url, text = future.result()
                 results[img_url] = text
                 if text:
-                    logging.info(f"{img_url} -> {text}")
+                    logging.info(f"🖼️ {img_url} -> Text: {text}")
                 else:
-                    logging.info(f"{img_url} -> No text extracted.")
+                    logging.info(f"🖼️ {img_url} -> No text extracted")
         return results
 
     def analyze_links(self):
-        logging.info(f"Total links found: {len(self.links)}")
+        logging.info(f"🔗 Total {len(self.links)} links found")
         for link in self.links:
-            logging.debug(f"{link}")
+            logging.debug(f" - {link}")
 
     def analyze_files(self):
-        logging.info(f"Total file links found: {len(self.files)}")
+        logging.info(f"📂 Total {len(self.files)} file links found")
         for file in self.files:
-            logging.debug(f"{file}")
+            logging.debug(f" - {file}")
 
     def run_analysis(self):
-        logging.info(f"Starting analysis for: {self.url}")
-        logging.info(f"Domain: {self.parsed_url.netloc}")
+        logging.info(f"\n🚀 Starting analysis: {self.url}")
+        logging.info(f"🔍 Domain: {self.parsed_url.netloc}")
+
         self.check_ssl()
         self.check_domain_info()
         self.check_redirects()
+
         self.fetch_content()
         self.analyze_text()
         self.analyze_images()
@@ -166,13 +164,12 @@ class AdvancedLinkAnalyzer:
         self.analyze_files()
 
 def main():
-    parser = argparse.ArgumentParser(description="Advanced Link Analyzer")
+    parser = argparse.ArgumentParser(description="Advanced Link Analysis Tool")
     parser.add_argument("-u", "--url", required=True, help="URL to analyze")
     args = parser.parse_args()
+
     analyzer = AdvancedLinkAnalyzer(args.url)
     analyzer.run_analysis()
 
 if __name__ == "__main__":
     main()
-
-
