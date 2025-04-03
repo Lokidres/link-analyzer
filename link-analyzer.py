@@ -1,4 +1,3 @@
-
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -10,12 +9,14 @@ from datetime import datetime
 import socket
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
+import json
+from tqdm import tqdm
 
-#Gerekli NLTK verisini indirme 
+# Ensure NLTK data is available
 try:
     nltk.data.find('sentiment/vader_lexicon.zip')
 except LookupError:
-    print("NLTK veri seti eksik. Lütfen aşağıdaki komutu çalıştırarak yükleyin:")
+    print("NLTK data is missing. Please run the following command to download it:")
     print(">>> import nltk; nltk.download('vader_lexicon')")
     exit()
 
@@ -28,6 +29,7 @@ class AdvancedLinkAnalyzer:
         self.images = []
         self.links = []
         self.files = []
+        self.results = {}
 
     def fetch_content(self):
         try:
@@ -39,11 +41,11 @@ class AdvancedLinkAnalyzer:
             self.extract_links()
             self.extract_files()
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"❌ Error fetching content: {e}")
 
     def extract_images(self):
         for img in self.soup.find_all('img'):
-            img_url = urljoin(self.url, img['src'])
+            img_url = urljoin(self.url, img.get('src', ''))
             self.images.append(img_url)
 
     def extract_links(self):
@@ -66,61 +68,106 @@ class AdvancedLinkAnalyzer:
             with socket.create_connection((self.parsed_url.hostname, 443)) as sock:
                 with context.wrap_socket(sock, server_hostname=self.parsed_url.hostname) as ssock:
                     cert = ssock.getpeercert()
+                    self.results['ssl'] = {
+                        "valid": True,
+                        "issuer": cert.get('issuer'),
+                        "expires": cert.get('notAfter')
+                    }
                     print(f"✅ SSL Certificate is valid.")
-                    print(f"   Issuer: {cert['issuer']}")
-                    print(f"   Expires: {cert['notAfter']}")
         except Exception as e:
+            self.results['ssl'] = {"valid": False, "error": str(e)}
             print(f"❌ SSL Certificate is invalid or not found: {e}")
 
     def check_domain_info(self):
         try:
             domain = whois.whois(self.parsed_url.hostname)
-            print(f"🌐 Domain Information:")
-            print(f"   Registrar: {domain.registrar}")
-            print(f"   Creation Date: {domain.creation_date}")
-            print(f"   Expiration Date: {domain.expiration_date}")
+            self.results['domain_info'] = {
+                "registrar": domain.registrar if domain.registrar else "Unknown",
+                "creation_date": str(domain.creation_date) if domain.creation_date else "Unknown",
+                "expiration_date": str(domain.expiration_date) if domain.expiration_date else "Unknown"
+            }
+            print(f"🌐 Domain information fetched successfully.")
         except Exception as e:
+            self.results['domain_info'] = {"error": str(e)}
             print(f"❌ Failed to fetch WHOIS information: {e}")
 
     def check_redirects(self):
         try:
             response = requests.get(self.url, allow_redirects=True)
             if response.history:
-                print(f"🔀 Redirects detected:")
-                for resp in response.history:
-                    print(f"   - {resp.url} → {resp.status_code}")
+                self.results['redirects'] = [resp.url for resp in response.history]
+                print(f"🔀 Redirects detected.")
             else:
+                self.results['redirects'] = []
                 print(f"✅ No redirects detected.")
         except Exception as e:
+            self.results['redirects'] = {"error": str(e)}
             print(f"❌ Failed to check redirects: {e}")
 
     def analyze_text(self):
-        sia = SentimentIntensityAnalyzer()
-        sentiment = sia.polarity_scores(self.text_content)
-        print(f"📊 Text Sentiment Analysis: {sentiment}")
+        try:
+            sia = SentimentIntensityAnalyzer()
+            sentiment = sia.polarity_scores(self.text_content)
+            self.results['text_sentiment'] = sentiment
+            print(f"📊 Text Sentiment Analysis: {sentiment}")
+        except Exception as e:
+            self.results['text_sentiment'] = {"error": str(e)}
+            print(f"❌ Error analyzing text sentiment: {e}")
 
     def analyze_images(self):
-        for img_url in self.images:
+        self.results['image_texts'] = []
+        for img_url in tqdm(self.images, desc="Analyzing Images"):
             try:
                 response = requests.get(img_url, stream=True)
                 img = Image.open(response.raw)
                 text = pytesseract.image_to_string(img)
+                self.results['image_texts'].append({"url": img_url, "text": text})
                 print(f"🖼️ Text from Image: {text}")
             except Exception as e:
                 print(f"Image analysis error: {e}")
 
     def analyze_links(self):
+        self.results['links'] = self.links
         print(f"🔗 Total {len(self.links)} links found:")
-        for link in self.links:
+        for link in tqdm(self.links, desc="Analyzing Links"):
             print(f" - {link}")
 
     def analyze_files(self):
+        self.results['files'] = self.files
         print(f"📂 Total {len(self.files)} files found:")
         for file in self.files:
             print(f" - {file}")
 
+    def check_broken_links(self):
+        broken_links = []
+        for link in tqdm(self.links, desc="Checking Broken Links"):
+            try:
+                response = requests.head(link, timeout=5)
+                if response.status_code >= 400:
+                    broken_links.append(link)
+            except Exception:
+                broken_links.append(link)
+        self.results['broken_links'] = broken_links
+        print(f"❌ Total {len(broken_links)} broken links found.")
+
+    def save_results(self):
+        # Generate a unique filename based on the current timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"analysis_results_{timestamp}.json"
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(self.results, f, indent=4)
+        print(f"📁 Results saved to '{filename}'.")
+
+    def display_results(self):
+        print("\n==================== RESULTS ====================")
+        for key, value in self.results.items():
+            print(f"{key.upper()}:")
+            print(json.dumps(value, indent=4))
+        print("=================================================")
+
     def run_analysis(self):
-        print(f"\n🚀 Analyzing Link: {self.url}")
+        print(f"\n==================== ANALYSIS ====================")
+        print(f"🚀 Analyzing Link: {self.url}")
         print(f"🔍 Domain Extension: {self.parsed_url.netloc}")
 
         self.check_ssl()
@@ -132,8 +179,15 @@ class AdvancedLinkAnalyzer:
         self.analyze_images()
         self.analyze_links()
         self.analyze_files()
+        self.check_broken_links()
+
+        self.save_results()
+        self.display_results()
 
 if __name__ == "__main__":
     url = input("Enter the URL to analyze: ")
-    analyzer = AdvancedLinkAnalyzer(url)
-    analyzer.run_analysis() 
+    if not url.startswith("http"):
+        print("❌ Invalid URL. Please include 'http://' or 'https://'.")
+    else:
+        analyzer = AdvancedLinkAnalyzer(url)
+        analyzer.run_analysis()
