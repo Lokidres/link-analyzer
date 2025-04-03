@@ -1,18 +1,7 @@
-import requests
-from bs4 import BeautifulSoup
-from PIL import Image
-import pytesseract
-from urllib.parse import urlparse, urljoin
-import ssl
-import whois
-from datetime import datetime
-import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
-import socket
 import subprocess
 import sys
 
-
+# Gerekli modüller
 required_modules = [
     "requests",
     "beautifulsoup4",
@@ -22,7 +11,7 @@ required_modules = [
     "nltk"
 ]
 
-
+# Modülleri kontrol et ve yükle
 for module in required_modules:
     try:
         __import__(module)
@@ -30,11 +19,20 @@ for module in required_modules:
         print(f"{module} modülü eksik, yükleniyor...")
         subprocess.call([sys.executable, "-m", "pip", "install", module])
 
-# Asıl kodun dosyasını çalıştır
-subprocess.call([sys.executable, "link-analyzer.py"])
-
-
+# NLTK için özel indirme işlemi
+import nltk
 nltk.download('vader_lexicon')
+
+import requests
+from bs4 import BeautifulSoup
+from PIL import Image
+import pytesseract
+from urllib.parse import urlparse, urljoin
+import ssl
+import whois
+from datetime import datetime
+import socket
+from nltk.sentiment import SentimentIntensityAnalyzer
 
 class AdvancedLinkAnalyzer:
     def __init__(self, url):
@@ -47,7 +45,6 @@ class AdvancedLinkAnalyzer:
         self.files = []
 
     def fetch_content(self):
-    
         try:
             response = requests.get(self.url)
             response.raise_for_status()
@@ -65,7 +62,6 @@ class AdvancedLinkAnalyzer:
             self.images.append(img_url)
 
     def extract_links(self):
-      
         for link in self.soup.find_all('a'):
             href = link.get('href')
             if href:
@@ -73,7 +69,6 @@ class AdvancedLinkAnalyzer:
                 self.links.append(full_url)
 
     def extract_files(self):
-      
         for link in self.soup.find_all('a'):
             href = link.get('href')
             if href and any(href.endswith(ext) for ext in ['.pdf', '.doc', '.docx', '.xls', '.xlsx']):
@@ -81,7 +76,6 @@ class AdvancedLinkAnalyzer:
                 self.files.append(full_url)
 
     def check_ssl(self):
-     
         try:
             context = ssl.create_default_context()
             with socket.create_connection((self.parsed_url.hostname, 443)) as sock:
@@ -94,7 +88,6 @@ class AdvancedLinkAnalyzer:
             print(f"❌ SSL Certificate is invalid or not found: {e}")
 
     def check_domain_info(self):
-      
         try:
             domain = whois.whois(self.parsed_url.hostname)
             print(f"🌐 Domain Information:")
@@ -105,7 +98,6 @@ class AdvancedLinkAnalyzer:
             print(f"❌ Failed to fetch WHOIS information: {e}")
 
     def check_redirects(self):
-       
         try:
             response = requests.get(self.url, allow_redirects=True)
             if response.history:
@@ -118,13 +110,11 @@ class AdvancedLinkAnalyzer:
             print(f"❌ Failed to check redirects: {e}")
 
     def analyze_text(self):
-       
         sia = SentimentIntensityAnalyzer()
         sentiment = sia.polarity_scores(self.text_content)
         print(f"📊 Text Sentiment Analysis: {sentiment}")
 
     def analyze_images(self):
-      
         for img_url in self.images:
             try:
                 response = requests.get(img_url, stream=True)
@@ -135,28 +125,23 @@ class AdvancedLinkAnalyzer:
                 print(f"Image analysis error: {e}")
 
     def analyze_links(self):
-    
         print(f"🔗 Total {len(self.links)} links found:")
         for link in self.links:
             print(f" - {link}")
 
     def analyze_files(self):
-    
         print(f"📂 Total {len(self.files)} files found:")
         for file in self.files:
             print(f" - {file}")
 
     def run_analysis(self):
-     
         print(f"\n🚀 Analyzing Link: {self.url}")
         print(f"🔍 Domain Extension: {self.parsed_url.netloc}")
 
-    
         self.check_ssl()
         self.check_domain_info()
         self.check_redirects()
 
-    
         self.fetch_content()
         self.analyze_text()
         self.analyze_images()
