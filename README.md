@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Advanced Link Analyzer** is a Python-based tool designed to analyze web pages comprehensively. It extracts and evaluates various elements such as links, images, files, SSL certificates, domain information, and more. The tool also performs sentiment analysis on the text content and OCR (Optical Character Recognition) on images to extract embedded text.
+The **Advanced Link Analyzer** is a Python-based tool designed to analyze web pages comprehensively. It extracts and evaluates various elements such as links, images, files, SSL certificates, domain information, and more. The tool also performs sentiment analysis on the text content to provide insights into the webpage's tone.
 
 This project is ideal for developers, researchers, and SEO analysts who need to gather insights about a webpage's structure, content, and security.
 
@@ -14,7 +14,6 @@ This project is ideal for developers, researchers, and SEO analysts who need to 
 - **Domain Information**: Fetches WHOIS data, including registrar, creation date, and expiration date.
 - **Redirect Detection**: Identifies and lists all redirects for the given URL.
 - **Text Sentiment Analysis**: Analyzes the sentiment of the webpage's text content using NLTK's VADER sentiment analyzer.
-- **Image Text Extraction**: Uses OCR (via Tesseract) to extract text from images on the webpage.
 - **Link Analysis**: Extracts and lists all hyperlinks on the webpage.
 - **File Detection**: Identifies downloadable files (e.g., PDFs, Word documents, Excel files) linked on the webpage.
 - **Broken Link Checker**: Detects and lists broken links on the webpage.
@@ -27,31 +26,26 @@ This project is ideal for developers, researchers, and SEO analysts who need to 
 ### Prerequisites
 Ensure you have Python 3.7 or higher installed. You can download it from [python.org](https://www.python.org/).
 
-### Required Modules
+### Clone the Repository
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/advanced-link-analyzer.git
+   cd advanced-link-analyzer
+   ```
+
+### Install Required Modules
 Install the required Python modules using `pip`:
 
 ```bash
-pip install requests beautifulsoup4 pillow pytesseract nltk tqdm whois
+pip install requests beautifulsoup4 pillow nltk tqdm whois
 ```
 
-### Additional Setup
-1. **Tesseract OCR** (for image text extraction):
-   - **Windows**: Download and install Tesseract from [here](https://github.com/tesseract-ocr/tesseract).
-   - **Linux**: Install via your package manager:
-     ```bash
-     sudo apt install tesseract-ocr
-     ```
-   - **macOS**: Install via Homebrew:
-     ```bash
-     brew install tesseract
-     ```
-
-2. **NLTK Data**:
-   Download the VADER sentiment analysis lexicon:
-   ```python
-   import nltk
-   nltk.download('vader_lexicon')
-   ```
+### NLTK Data Setup
+Download the VADER sentiment analysis lexicon:
+```python
+import nltk
+nltk.download('vader_lexicon')
+```
 
 ---
 
@@ -81,7 +75,6 @@ pip install requests beautifulsoup4 pillow pytesseract nltk tqdm whois
 🌐 Domain information fetched successfully.
 🔀 Redirects detected.
 📊 Text Sentiment Analysis: {'neg': 0.0, 'neu': 0.9, 'pos': 0.1, 'compound': 0.5}
-🖼️ Text from Image: "Sample Text"
 🔗 Total 10 links found:
  - https://example.com/page1
  - https://example.com/page2
@@ -115,12 +108,6 @@ pip install requests beautifulsoup4 pillow pytesseract nltk tqdm whois
         "pos": 0.1,
         "compound": 0.5
     },
-    "image_texts": [
-        {
-            "url": "https://example.com/image1.jpg",
-            "text": "Sample Text"
-        }
-    ],
     "links": [
         "https://example.com/page1",
         "https://example.com/page2"
@@ -140,8 +127,7 @@ pip install requests beautifulsoup4 pillow pytesseract nltk tqdm whois
 ## Notes
 
 - Ensure the URL includes `http://` or `https://` to avoid errors.
-- The tool may take longer to analyze pages with many images or links.
-- For best results, ensure Tesseract OCR is correctly installed and configured.
+- The tool may take longer to analyze pages with many links or files.
 
 ---
 
@@ -154,7 +140,6 @@ Contributions are welcome! Feel free to open issues or submit pull requests to i
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
 
 
 
