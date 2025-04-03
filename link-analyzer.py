@@ -1,28 +1,3 @@
-import subprocess
-import sys
-
-# Gerekli modüller
-required_modules = [
-    "requests",
-    "beautifulsoup4",
-    "pillow",
-    "pytesseract",
-    "whois",
-    "nltk"
-]
-
-# Modülleri kontrol et ve yükle
-for module in required_modules:
-    try:
-        __import__(module)
-    except ImportError:
-        print(f"{module} modülü eksik, yükleniyor...")
-        subprocess.call([sys.executable, "-m", "pip", "install", module])
-
-# NLTK için özel indirme işlemi
-import nltk
-nltk.download('vader_lexicon')
-
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -33,6 +8,15 @@ import whois
 from datetime import datetime
 import socket
 from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
+
+# Gerekli NLTK verisini indirme 
+try:
+    nltk.data.find('sentiment/vader_lexicon.zip')
+except LookupError:
+    print("NLTK veri seti eksik. Lütfen aşağıdaki komutu çalıştırarak yükleyin:")
+    print(">>> import nltk; nltk.download('vader_lexicon')")
+    exit()
 
 class AdvancedLinkAnalyzer:
     def __init__(self, url):
@@ -152,3 +136,4 @@ if __name__ == "__main__":
     url = input("Enter the URL to analyze: ")
     analyzer = AdvancedLinkAnalyzer(url)
     analyzer.run_analysis()
+
