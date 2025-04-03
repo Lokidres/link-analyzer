@@ -13,5 +13,5 @@ A Python-based AI tool to analyze the content of a link, including text, images,
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/link-analyzer.git
+   git clone https://github.com/Lokidres/link-analyzer.git
    cd link-analyzer
