@@ -29,8 +29,8 @@ Ensure you have Python 3.7 or higher installed. You can download it from [python
 ### Clone the Repository
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/advanced-link-analyzer.git
-   cd advanced-link-analyzer
+   git clone https://github.com/Lokidres/link-analyzer.git
+   cd link-analyzer
    ```
 
 ### Install Required Modules
