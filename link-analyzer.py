@@ -10,7 +10,7 @@ import socket
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 
-# Gerekli NLTK verisini indirme 
+#Gerekli NLTK verisini indirme 
 try:
     nltk.data.find('sentiment/vader_lexicon.zip')
 except LookupError:
