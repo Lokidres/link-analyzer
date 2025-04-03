@@ -9,6 +9,30 @@ from datetime import datetime
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 import socket
+import subprocess
+import sys
+
+
+required_modules = [
+    "requests",
+    "beautifulsoup4",
+    "pillow",
+    "pytesseract",
+    "whois",
+    "nltk"
+]
+
+
+for module in required_modules:
+    try:
+        __import__(module)
+    except ImportError:
+        print(f"{module} modülü eksik, yükleniyor...")
+        subprocess.call([sys.executable, "-m", "pip", "install", module])
+
+# Asıl kodun dosyasını çalıştır
+subprocess.call([sys.executable, "link-analyzer.py"])
+
 
 nltk.download('vader_lexicon')
 
